@@ -1,0 +1,7 @@
+// Add this to ~/.claude/settings.json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline.sh"
+  }
+}
