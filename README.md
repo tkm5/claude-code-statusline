@@ -12,12 +12,12 @@ Custom status line script for Claude Code that displays session usage metrics wi
 
 | Segment | Description | Style |
 |---------|-------------|-------|
-| `~/.claude` | Current working directory | Cyan |
+| `~/.claude` | Current working directory (leftmost) | Cyan |
 | `$5.85` | Session cost (USD) | Dim |
 | `88.0%` | 5-hour rate limit remaining | Bold + Color |
 | `(2h 55m)` | Time until 5-hour window resets | Dim |
 | `7d 73.0%` | 7-day rate limit remaining | Label: Dim, Value: Bold + Color |
-| `CTX 90.0%` | Context window remaining | Label: Dim, Value: Bold + Color |
+| `CTX 90.0%` | Context window remaining (defaults to 100% after `/clear`) | Label: Dim, Value: Bold + Color |
 
 ## Color Thresholds
 
@@ -71,7 +71,7 @@ claude auth login
 
 ### Data Sources
 
-- **Session info** (model, cwd, cost, context): Received via stdin JSON from Claude Code
+- **Session info** (model, cwd, cost, context): Received via stdin JSON from Claude Code. Context window defaults to 100% when data is unavailable (e.g., after `/clear`)
 - **Rate limits** (5h, 7d): Fetched from Anthropic OAuth Usage API (`/api/oauth/usage`)
 - **Fallback**: `ccusage` CLI tool (if installed and OAuth is unavailable)
 

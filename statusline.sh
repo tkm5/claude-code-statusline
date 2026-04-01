@@ -34,13 +34,12 @@ _rate_color() {
 # ─── Parse Claude input (single jq call) ───
 
 claude_input=$(cat)
-IFS='|' read -r session_name model_name cwd cost ctx_remaining <<< \
+IFS='|' read -r model_name cwd cost ctx_remaining <<< \
   "$(echo "$claude_input" | jq -r '[
-    (.session_name // .session_id // ""),
     (.model.display_name // ""),
     (.cwd // ""),
     (.cost.total_cost_usd // 0 | tostring),
-    (.context_window.remaining_percentage // 0 | tostring)
+    (.context_window.remaining_percentage // 100 | tostring)
   ] | join("|")')"
 
 cwd_str="${C_CYAN}${cwd/#$HOME/~}${C_RESET}"
@@ -217,16 +216,11 @@ ctx_str="${C_DIM}CTX${C_RESET} ${ctx_color}${ctx_pct}%${C_RESET}"
 
 # ─── Output ───
 
-session_str=""
-if [[ "$session_name" =~ ^[0-9a-f]{8}-[0-9a-f]{4}- ]]; then
-  session_str="${session_name:0:8}…${SEP}"
-fi
-
 if [ "${CLAUDE_CODE_USE_BEDROCK:-0}" != "0" ]; then
-  echo -n "${session_str}${cwd_str}${SEP}${ctx_str}"
+  echo -n "${cwd_str}${SEP}${ctx_str}"
 else
   rate_segment=""
   [ -n "$session_str_rate" ] && rate_segment="${SEP}${session_str_rate}"
 
-  echo -n "${session_str}${cwd_str}${SEP}${C_DIM}\$${cost_str}${C_RESET}${rate_segment}${SEP}${ctx_str}"
+  echo -n "${cwd_str}${SEP}${C_DIM}\$${cost_str}${C_RESET}${rate_segment}${SEP}${ctx_str}"
 fi
