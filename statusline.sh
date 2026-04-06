@@ -24,9 +24,9 @@ C_RESET=$'\033[0m'
 
 _rate_color() {
   local pct_int="$1"
-  if [ "$pct_int" -ge 80 ]; then echo -n "$C_GREEN"
-  elif [ "$pct_int" -ge 60 ]; then echo -n "$C_YELLOW"
-  elif [ "$pct_int" -ge 40 ]; then echo -n "$C_ORANGE"
+  if [ "$pct_int" -lt 20 ]; then echo -n "$C_GREEN"
+  elif [ "$pct_int" -lt 40 ]; then echo -n "$C_YELLOW"
+  elif [ "$pct_int" -lt 60 ]; then echo -n "$C_ORANGE"
   else echo -n "$C_RED"
   fi
 }
@@ -115,10 +115,10 @@ _build_oauth_rate_str() {
 
   [ -z "$five_util" ] && return 1
 
-  local remaining_pct remaining_int color
-  remaining_pct=$(awk "BEGIN { printf \"%.1f\", 100 - ${five_util} }")
-  remaining_int=${remaining_pct%%.*}
-  color=$(_rate_color "$remaining_int")
+  local usage_pct usage_int color
+  usage_pct=$(awk "BEGIN { printf \"%.1f\", ${five_util} }")
+  usage_int=${usage_pct%%.*}
+  color=$(_rate_color "$usage_int")
 
   local rate_time=""
   if [ -n "$resets_at" ]; then
@@ -136,14 +136,14 @@ _build_oauth_rate_str() {
   local seven_util seven_str=""
   seven_util=$(jq -r '.seven_day.utilization // ""' "$OAUTH_CACHE" 2>/dev/null || echo "")
   if [ -n "$seven_util" ]; then
-    local seven_remaining seven_int seven_color
-    seven_remaining=$(awk "BEGIN { printf \"%.1f\", 100 - ${seven_util} }")
-    seven_int=${seven_remaining%%.*}
+    local seven_usage seven_int seven_color
+    seven_usage=$(awk "BEGIN { printf \"%.1f\", ${seven_util} }")
+    seven_int=${seven_usage%%.*}
     seven_color=$(_rate_color "$seven_int")
-    seven_str="${SEP}${C_DIM}7d${C_RESET} ${seven_color}${seven_remaining}%${C_RESET}"
+    seven_str="${SEP}${C_DIM}7d${C_RESET} ${seven_color}${seven_usage}%${C_RESET}"
   fi
 
-  echo -n "${color}${remaining_pct}%${C_RESET}${rate_time}${seven_str}"
+  echo -n "${color}${usage_pct}%${C_RESET}${rate_time}${seven_str}"
 }
 
 # ─── Rate limit remaining (OAuth API with ccusage fallback) ───
@@ -184,7 +184,7 @@ if [ "${CLAUDE_CODE_USE_BEDROCK:-0}" = "0" ]; then
         "$(jq -r '([.blocks[] | select(.isActive == true)][0] // null) | if . == null then "|" else [(.totalTokens // 0 | tostring), (.projection.remainingMinutes // "" | tostring)] | join("|") end' "$CCUSAGE_CACHE" 2>/dev/null || echo "|")"
 
       if [ -n "$total_tokens" ] && [ "$total_tokens" != "0" ] && [ "$total_tokens" != "null" ]; then
-        remaining_pct=$(awk "BEGIN { printf \"%.1f\", (1 - $total_tokens / $TOKEN_LIMIT) * 100 }")
+        remaining_pct=$(awk "BEGIN { printf \"%.1f\", ($total_tokens / $TOKEN_LIMIT) * 100 }")
         rate_int=${remaining_pct%%.*}
         color=$(_rate_color "$rate_int")
 
@@ -209,10 +209,10 @@ fi
 
 # ─── Context window indicator ───
 
-ctx_int=${ctx_remaining%%.*}
-ctx_pct=$(awk "BEGIN { printf \"%.1f\", ${ctx_remaining} }")
+ctx_usage=$(awk "BEGIN { printf \"%.1f\", 100 - ${ctx_remaining} }")
+ctx_int=${ctx_usage%%.*}
 ctx_color=$(_rate_color "$ctx_int")
-ctx_str="${C_DIM}CTX${C_RESET} ${ctx_color}${ctx_pct}%${C_RESET}"
+ctx_str="${C_DIM}CTX${C_RESET} ${ctx_color}${ctx_usage}%${C_RESET}"
 
 # ─── Output ───
 
