@@ -34,18 +34,31 @@ _rate_color() {
 # ─── Parse Claude input (single jq call) ───
 
 claude_input=$(cat)
-IFS='|' read -r model_name cwd cost ctx_remaining <<< \
+IFS='|' read -r model_name cwd ctx_remaining <<< \
   "$(echo "$claude_input" | jq -r '[
     (.model.display_name // ""),
     (.cwd // ""),
-    (.cost.total_cost_usd // 0 | tostring),
     (.context_window.remaining_percentage // 100 | tostring)
   ] | join("|")')"
 
-cwd_str="${C_CYAN}${cwd/#$HOME/~}${C_RESET}"
-
-# Format cost with 2 decimal places
-cost_str=$(awk "BEGIN { printf \"%.2f\", ${cost} }")
+# Compact cwd: ~/first_char/.../last_dir
+_compact_cwd() {
+  local tilde="~"
+  local p="${1/#$HOME/$tilde}"
+  # 3 segments or fewer (e.g. ~/src/foo) — show as-is
+  local depth
+  depth=$(echo "$p" | tr -cd '/' | wc -c | tr -d ' ')
+  if [ "$depth" -le 2 ]; then
+    echo -n "$p"
+    return
+  fi
+  # ~/first_char/.../last_dir
+  local first last
+  first=$(echo "$p" | cut -d'/' -f1-2 | sed 's|/\(.\).*|/\1|')
+  last=$(basename "$p")
+  echo -n "${first}/.../${last}"
+}
+cwd_str="${C_CYAN}$(_compact_cwd "$cwd")${C_RESET}"
 
 
 # Separator: dim pipe (space after reset to prevent ANSI bleed)
@@ -222,5 +235,5 @@ else
   rate_segment=""
   [ -n "$session_str_rate" ] && rate_segment="${SEP}${session_str_rate}"
 
-  echo -n "${cwd_str}${SEP}${C_DIM}\$${cost_str}${C_RESET}${rate_segment}${SEP}${ctx_str}"
+  echo -n "${cwd_str}${rate_segment}${SEP}${ctx_str}"
 fi

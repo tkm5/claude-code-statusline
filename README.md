@@ -5,15 +5,14 @@ Custom status line script for Claude Code that displays session usage metrics wi
 ## Screenshot
 
 ```
-~/.claude │ $5.85 │ 12.0% (2h 55m) │ 7d 27.0% │ CTX 10.0%
+~/s/.../my-project │ 12.0% (2h 55m) │ 7d 27.0% │ CTX 10.0%
 ```
 
 ## Display Format
 
 | Segment | Description | Style |
 |---------|-------------|-------|
-| `~/.claude` | Current working directory (leftmost) | Cyan |
-| `$5.85` | Session cost (USD) | Dim |
+| `~/s/.../my-project` | Compact cwd (leftmost). Paths with 3+ segments are shortened: `~/first_char/.../last_dir` | Cyan |
 | `12.0%` | 5-hour rate limit used | Bold + Color |
 | `(2h 55m)` | Time until 5-hour window resets | Dim |
 | `7d 27.0%` | 7-day rate limit used | Label: Dim, Value: Bold + Color |
@@ -71,7 +70,7 @@ claude auth login
 
 ### Data Sources
 
-- **Session info** (model, cwd, cost, context): Received via stdin JSON from Claude Code. Context window defaults to 0% usage when data is unavailable (e.g., after `/clear`)
+- **Session info** (model, cwd, context): Received via stdin JSON from Claude Code. Context window defaults to 0% usage when data is unavailable (e.g., after `/clear`). CWD is compacted for deep paths: `~/first_char/.../last_dir`
 - **Rate limits** (5h, 7d): Fetched from Anthropic OAuth Usage API (`/api/oauth/usage`)
 - **Fallback**: `ccusage` CLI tool (if installed and OAuth is unavailable)
 
