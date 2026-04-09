@@ -233,7 +233,7 @@ if [ "${CLAUDE_CODE_USE_BEDROCK:-0}" != "0" ]; then
   echo -n "${cwd_str}${SEP}${ctx_str}"
 else
   rate_segment=""
-  [ -n "$session_str_rate" ] && rate_segment="${SEP}${session_str_rate}"
+  [ -n "$session_str_rate" ] && rate_segment="${session_str_rate}${SEP}"
 
-  echo -n "${cwd_str}${rate_segment}${SEP}${ctx_str}"
+  echo -n "${cwd_str}${SEP}${rate_segment}${ctx_str}"
 fi
